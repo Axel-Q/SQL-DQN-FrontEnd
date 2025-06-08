@@ -67,8 +67,13 @@ export function MainUI({
     e.preventDefault();
     if (!input.trim()) return;
 
+    console.log('=== handleSubmit 开始 ===');
+    console.log('isLoading before:', isLoading);
+
     try {
       setIsLoading(true);
+      console.log('setIsLoading(true) 调用');
+      
       const themeQueries = Queries[theme as keyof typeof Queries];
       const conceptQueries = themeQueries[concept as keyof typeof themeQueries];
       
@@ -144,14 +149,14 @@ export function MainUI({
         setTimeout(() => setShowErrorAnimation(false), 1500);
       }
 
-      // Set the new output and clear input
+      console.log('请求成功，准备重置状态');
       setOutput(narrative);
       setInput('');
-      
-      // 修复：在成功路径中也要重置加载状态
       setIsLoading(false);
+      console.log('setIsLoading(false) 调用');
       
     } catch (error) {
+      console.log('请求失败:', error);
       const basicErrorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       
       setShowErrorAnimation(true);
@@ -200,6 +205,8 @@ export function MainUI({
         setIsLoading(false);
       }
     }
+    
+    console.log('=== handleSubmit 结束 ===');
   };
 
   // Helper to toggle the history popup
