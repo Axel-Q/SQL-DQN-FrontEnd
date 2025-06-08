@@ -84,7 +84,11 @@ export function MainUI({
       
       const expected = conceptQueries.expected[randomChoice];
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/submit-query`, {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const isDev = import.meta.env.MODE === 'development';
+      const finalApiUrl = apiUrl || (isDev ? 'http://localhost:3000' : 'http://44.204.27.181:3000');
+      
+      const response = await fetch(`${finalApiUrl}/submit-query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userQuery: input, expected }),
