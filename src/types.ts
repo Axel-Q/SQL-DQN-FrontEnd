@@ -25,3 +25,17 @@ export type TaskStatus = {
   concept: string;
   narrative: string;
 };
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  unlocked: boolean;
+}
+
+export interface UserProgress {
+  completedConcepts: number;
+  completedQuestions: number;
+  badges: Badge[];
+}

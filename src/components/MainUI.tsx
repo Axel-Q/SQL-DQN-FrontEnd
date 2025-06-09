@@ -5,8 +5,9 @@ import { generateQueryForConcept } from '../utils/queryHelpers';
 import { formatDBResult } from '../utils/formatters';
 import { useTypewriter } from '../hooks/useTypewriter';
 import { animations } from '../styles/animations';
-import { MainUIProps, HistoryEntry, TaskStatus } from '../types';
+import { MainUIProps, HistoryEntry, TaskStatus, UserProgress } from '../types';
 import { generateErrorMessage } from '../utils/llmService';
+import { initializeProgress, updateProgress } from '../utils/badgeManager';
 
 // Import components
 import { TaskList } from './TaskList';
@@ -16,6 +17,8 @@ import { HistoryPopup } from './HistoryPopup';
 import { FeedbackAnimations } from './FeedbackAnimations';
 import { OutputDisplay } from './OutputDisplay';
 import { MasteryProgress } from './MasteryProgress';
+import { BadgeDisplay } from './BadgeDisplay';
+import { SQLEditor } from './SQLEditor';
 
 export function MainUI({
   initialOutput,
@@ -37,6 +40,7 @@ export function MainUI({
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [showErrorAnimation, setShowErrorAnimation] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [userProgress, setUserProgress] = useState<UserProgress>(initializeProgress());
 
   // Use custom typewriter hook for output animation
   const { displayText, isTyping } = useTypewriter(output, output.includes('Error:'));
@@ -153,6 +157,10 @@ export function MainUI({
         setTimeout(() => setShowErrorAnimation(false), 1500);
       }
 
+      // Update user progress
+      const conceptCompleted = isCorrect && newMastery >= 0.8;
+      setUserProgress(prev => updateProgress(prev, conceptCompleted, true));
+
       console.log('请求成功，准备重置状态');
       setOutput(narrative);
       setInput('');
@@ -244,26 +252,19 @@ export function MainUI({
             />
           </div>
 
-          <div className="relative h-12 mb-4">
-            <QueryInputForm
-              input={input}
-              setInput={setInput}
+          <div className="mb-4">
+            <SQLEditor
+              value={input}
+              onChange={setInput}
               onSubmit={handleSubmit}
               isLoading={isLoading}
-              toggleHistory={toggleHistory}
-            />
-            
-            <HistoryPopup
-              isOpen={isHistoryOpen}
-              onClose={() => setIsHistoryOpen(false)}
-              history={history}
-              onUseQuery={useQueryFromHistory}
             />
           </div>
         </div>
 
         <div className="space-y-4">
           <MasteryProgress concepts={concepts} masteryLevels={masteryLevels} />
+          <BadgeDisplay badges={userProgress.badges} />
           <SchemaDisplay schemas={initialSchemas} theme={theme} />
         </div>
       </div>
