@@ -37,6 +37,10 @@ export function MainUI({
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [showErrorAnimation, setShowErrorAnimation] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  // set variables to track attempts, hints, and optimizations
+  const [attempts, setAttempts] = useState(0);
+  const [hintsUsed, setHintsUsed] = useState(false);
+
 
   // Use custom typewriter hook for output animation
   const { displayText, isTyping } = useTypewriter(output, output.includes('Error:'));
@@ -69,6 +73,7 @@ export function MainUI({
 
     try {
       setIsLoading(true);
+      setAttempts(prev => prev + 1);
       const themeQueries = Queries[theme as keyof typeof Queries];
       const conceptQueries = themeQueries[concept as keyof typeof themeQueries];
       
@@ -82,7 +87,7 @@ export function MainUI({
       const response = await fetch('http://localhost:3000/submit-query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userQuery: input, expected }),
+        body: JSON.stringify({ userQuery: input, expected, attempts, hintsUsed}),
       });
 
       if (!response.ok) {
@@ -139,6 +144,7 @@ export function MainUI({
       if (isCorrect) {
         setShowSuccessAnimation(true);
         setTimeout(() => setShowSuccessAnimation(false), 1500);
+        setAttempts(0); // Reset attempts on success
       } else {
         setShowErrorAnimation(true);
         setTimeout(() => setShowErrorAnimation(false), 1500);
@@ -159,6 +165,7 @@ export function MainUI({
           return prevOutput + `\n\n<span class="text-red-500">Error: ${basicErrorMessage}</span>`;
         });
         
+        //TODO: record hintsUsed when error message showed. Refined to hint button.
         // Call the LLM service to get a more helpful error message
         const improvedErrorMessage = await generateErrorMessage({
           userQuery: input,
@@ -222,7 +229,7 @@ export function MainUI({
             </h3>
             
             <TaskList tasks={tasks} />
-            
+            <span className="text-gray-400 text-sm">{attempts} attempts</span>
             <OutputDisplay
               displayText={displayText}
               isTyping={isTyping}

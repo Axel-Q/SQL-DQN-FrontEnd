@@ -10,7 +10,7 @@ interface OutputDisplayProps {
 
 export const OutputDisplay: React.FC<OutputDisplayProps> = ({ 
   displayText, 
-  isTyping 
+  isTyping,
 }) => {
   return (
     <div className="prose prose-invert">
@@ -21,6 +21,7 @@ export const OutputDisplay: React.FC<OutputDisplayProps> = ({
         {displayText || 'No output yet...'}
       </ReactMarkdown>
       {isTyping && <span className="animate-pulse">▌</span>}
+      
     </div>
   );
 };
