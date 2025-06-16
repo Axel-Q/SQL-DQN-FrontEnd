@@ -8,6 +8,7 @@ import { animations } from '../styles/animations';
 import { MainUIProps, HistoryEntry, TaskStatus, UserProgress } from '../types';
 import { generateErrorMessage } from '../utils/llmService';
 import { initializeProgress, updateProgress } from '../utils/badgeManager';
+import { getDifficultyForConcept } from '../utils/difficultyManager';
 
 // Import components
 import { TaskList } from './TaskList';
@@ -19,6 +20,7 @@ import { OutputDisplay } from './OutputDisplay';
 import { MasteryProgress } from './MasteryProgress';
 import { BadgeDisplay } from './BadgeDisplay';
 import { SQLEditor } from './SQLEditor';
+import { DifficultyIndicator } from './DifficultyIndicator';
 
 export function MainUI({
   initialOutput,
@@ -66,6 +68,9 @@ export function MainUI({
   useEffect(() => {
     setMasteryLevels(concepts.map(() => 0.6));
   }, [concepts]);
+
+  // Get current difficulty
+  const currentDifficulty = getDifficultyForConcept(concept);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -236,36 +241,59 @@ export function MainUI({
         showError={showErrorAnimation}
       />
       
-      <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
-        <div className="flex flex-col h-full">
-          <div ref={outputContainerRef} className="flex-grow mb-4 rounded-xl p-4 overflow-auto bg-gray-800">
-            <h3 className="text-xl font-semibold mb-4 flex items-center">
-              <ListChecks className="w-5 h-5 mr-2" />
-              Task Board
-            </h3>
-            
-            <TaskList tasks={tasks} />
-            
-            <OutputDisplay
-              displayText={displayText}
-              isTyping={isTyping}
-            />
+      <div className="min-h-screen flex flex-col">
+        {/* Header with badges */}
+        <header className="bg-gray-800 border-b border-gray-700 p-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-2xl font-bold text-white">SQL Learning Platform</h1>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400">Completed Questions: {userProgress.completedQuestions}</span>
+                <span className="text-gray-400">|</span>
+                <span className="text-gray-400">Mastered Concepts: {userProgress.completedConcepts}</span>
+              </div>
+            </div>
+            <BadgeDisplay badges={userProgress.badges} />
+          </div>
+        </header>
+
+        {/* Main content */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
+          <div className="flex flex-col h-full">
+            <div ref={outputContainerRef} className="flex-grow mb-4 rounded-xl p-4 overflow-auto bg-gray-800">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold flex items-center">
+                  <ListChecks className="w-5 h-5 mr-2" />
+                  Task Board
+                </h3>
+                <DifficultyIndicator
+                  level={currentDifficulty.level}
+                  description={currentDifficulty.description}
+                />
+              </div>
+              
+              <TaskList tasks={tasks} />
+              
+              <OutputDisplay
+                displayText={displayText}
+                isTyping={isTyping}
+              />
+            </div>
+
+            <div className="mb-4">
+              <SQLEditor
+                value={input}
+                onChange={setInput}
+                onSubmit={handleSubmit}
+                isLoading={isLoading}
+              />
+            </div>
           </div>
 
-          <div className="mb-4">
-            <SQLEditor
-              value={input}
-              onChange={setInput}
-              onSubmit={handleSubmit}
-              isLoading={isLoading}
-            />
+          <div className="space-y-4">
+            <MasteryProgress concepts={concepts} masteryLevels={masteryLevels} />
+            <SchemaDisplay schemas={initialSchemas} theme={theme} />
           </div>
-        </div>
-
-        <div className="space-y-4">
-          <MasteryProgress concepts={concepts} masteryLevels={masteryLevels} />
-          <BadgeDisplay badges={userProgress.badges} />
-          <SchemaDisplay schemas={initialSchemas} theme={theme} />
         </div>
       </div>
     </>
