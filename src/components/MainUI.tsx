@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ListChecks } from 'lucide-react';
-import { Queries } from '../utils/constants';
+import { Queries, AllConcepts } from '../utils/constants';
 import { generateQueryForConcept } from '../utils/queryHelpers';
 import { formatDBResult } from '../utils/formatters';
 import { useTypewriter } from '../hooks/useTypewriter';
@@ -9,6 +9,7 @@ import { MainUIProps, HistoryEntry, TaskStatus, UserProgress } from '../types';
 import { generateErrorMessage } from '../utils/llmService';
 import { initializeProgress, updateProgress } from '../utils/badgeManager';
 import { getDifficultyForConcept } from '../utils/difficultyManager';
+import { totalQuestionsAcrossAllThemes } from '../utils/questionTotals';
 
 // Import components
 import { TaskList } from './TaskList';
@@ -21,6 +22,7 @@ import { MasteryProgress } from './MasteryProgress';
 import { BadgeDisplay } from './BadgeDisplay';
 import { SQLEditor } from './SQLEditor';
 import { DifficultyIndicator } from './DifficultyIndicator';
+import { ConceptsPopup } from './ConceptsPopup';
 
 export function MainUI({
   initialOutput,
@@ -43,6 +45,10 @@ export function MainUI({
   const [showErrorAnimation, setShowErrorAnimation] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [userProgress, setUserProgress] = useState<UserProgress>(initializeProgress());
+  const [isConceptsPopupOpen, setIsConceptsPopupOpen] = useState(false);
+  const [popupTitle, setPopupTitle] = useState('');
+  const [conceptsToShow, setConceptsToShow] = useState<string[]>([]);
+  const [isCompletedList, setIsCompletedList] = useState(false);
 
   // Use custom typewriter hook for output animation
   const { displayText, isTyping } = useTypewriter(output, output.includes('Error:'));
@@ -71,6 +77,28 @@ export function MainUI({
 
   // Get current difficulty
   const currentDifficulty = getDifficultyForConcept(concept);
+
+  const totalQuestions = totalQuestionsAcrossAllThemes;
+  const totalConcepts = AllConcepts.length;
+
+  const handleShowCompletedConcepts = () => {
+    setConceptsToShow(userProgress.uniqueConcepts);
+    setPopupTitle('Mastered Concepts');
+    setIsCompletedList(true);
+    setIsConceptsPopupOpen(true);
+  };
+
+  const handleShowAllConcepts = () => {
+    setConceptsToShow(AllConcepts);
+    setPopupTitle('All SQL Concepts');
+    setIsCompletedList(false);
+    setIsConceptsPopupOpen(true);
+  };
+  
+  const handleUpdateProgress = (questionCompleted: boolean, newConcept?: string) => {
+    const updatedProgress = updateProgress(userProgress, questionCompleted, newConcept);
+    setUserProgress(updatedProgress);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,8 +191,8 @@ export function MainUI({
       }
 
       // Update user progress
-      const conceptCompleted = isCorrect && newMastery >= 0.8;
-      setUserProgress(prev => updateProgress(prev, conceptCompleted, true));
+      const conceptJustMastered = isCorrect && newMastery >= 0.8 && !userProgress.uniqueConcepts.includes(concept);
+      handleUpdateProgress(true, conceptJustMastered ? concept : undefined);
 
       console.log('请求成功，准备重置状态');
       setOutput(narrative);
@@ -243,14 +271,22 @@ export function MainUI({
       
       <div className="min-h-screen flex flex-col">
         {/* Header with badges */}
-        <header className="bg-gray-800 border-b border-gray-700 p-4">
+        <header className="bg-gray-800 border-b border-gray-700 p-2">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-2xl font-bold text-white">SQL Learning Platform</h1>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-400">Completed Questions: {userProgress.completedQuestions}</span>
-                <span className="text-gray-400">|</span>
-                <span className="text-gray-400">Mastered Concepts: {userProgress.completedConcepts}</span>
+            <div className="flex items-center justify-between mb-0.5">
+              <h1 className="text-lg font-bold text-white">SQL Learning Platform</h1>
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <span>Completed Questions: {userProgress.completedQuestions} / {totalQuestions}</span>
+                <span>|</span>
+                <span>Mastered Concepts: 
+                  <button onClick={handleShowCompletedConcepts} className="text-blue-400 hover:underline focus:outline-none mx-1">
+                    {userProgress.completedConcepts}
+                  </button>
+                  /
+                  <button onClick={handleShowAllConcepts} className="text-blue-400 hover:underline focus:outline-none mx-1">
+                    {totalConcepts}
+                  </button>
+                </span>
               </div>
             </div>
             <BadgeDisplay badges={userProgress.badges} />
@@ -296,6 +332,14 @@ export function MainUI({
           </div>
         </div>
       </div>
+
+      <ConceptsPopup
+        isOpen={isConceptsPopupOpen}
+        onClose={() => setIsConceptsPopupOpen(false)}
+        title={popupTitle}
+        concepts={conceptsToShow}
+        isCompletedList={isCompletedList}
+      />
     </>
   );
 }

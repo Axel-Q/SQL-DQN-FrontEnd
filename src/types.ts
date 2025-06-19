@@ -29,13 +29,18 @@ export type TaskStatus = {
 export interface Badge {
   id: string;
   name: string;
+  shortDescription: string;
   description: string;
   icon: string;
   unlocked: boolean;
+  requirement: number;
+  type: 'questions' | 'concepts';
+  order: number;
 }
 
 export interface UserProgress {
-  completedConcepts: number;
   completedQuestions: number;
+  completedConcepts: number;
   badges: Badge[];
+  uniqueConcepts: string[];
 }
