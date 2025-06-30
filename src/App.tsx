@@ -43,7 +43,8 @@ function App() {
     // Use the helper function
     const { narrative, randomChoice: generatedChoice } = await generateQueryForConcept(
       chosenTheme,
-      chosenConcept
+      chosenConcept,
+      0.5, // Coefficient can be adjusted as needed
     );
     
     setRandomChoice(generatedChoice);

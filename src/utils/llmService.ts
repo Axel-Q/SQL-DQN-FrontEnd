@@ -3,6 +3,7 @@ interface QueryHistoryItem {
   concept: string;
   narrative: string;
   timestamp: number;
+  // coefficient: number;
 }
 
 // Create a function to manage the query history
@@ -49,6 +50,7 @@ if (typeof window !== 'undefined') {
 export async function getGeneratedQuery(
   theme: string,
   concept: string,
+  coefficient: number,
   input: Record<string, Record<string, any>>,
   expected: Array<Record<string, any>>
 ): Promise<string> {
@@ -111,6 +113,7 @@ export async function getGeneratedQuery(
     '[Format of your response]\n' +
     "1. Provide a narrative or storyline set within 50 words in bullets in the specified theme that continues from the previous storyline.\n" +
     "2. Do NOT provide the SQL query yourself; only ask the player to supply it.\n\n" +
+    `3. Ask different question according to the difficulty coefficient ${coefficient}, while 0.1 is the easiest and 1.0 is the most difficult.\n\n` +
     '[Example Guidance]\n' +
     "- If the theme is 'Cyberpunk,' your story might refer to futuristic cities, neon lights, or secret hacking missions.\n" +
     " - Conclude with a direct question like:\n" +
@@ -162,6 +165,7 @@ export async function generateErrorMessage({
   const content = 
     'You are an SQL tutor helping a student. ' +
     'Provide a helpful, informative explanation of what went wrong with their SQL query. ' +
+    'Or if the error message is none, just give a hint of how to solve the problem.'+
     'Be encouraging and educational. ' +
     'Include a hint about how to fix the issue without giving the full answer. ' +
     'Keep your response under 100 words. ' +
