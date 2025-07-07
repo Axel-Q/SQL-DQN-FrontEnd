@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ListChecks } from 'lucide-react';
-import { Queries } from '../utils/constants';
+import { Queries, AllConcepts } from '../utils/constants';
 import { generateQueryForConcept } from '../utils/queryHelpers';
 import { formatDBResult } from '../utils/formatters';
 import { useTypewriter } from '../hooks/useTypewriter';
 import { animations } from '../styles/animations';
-import { MainUIProps, HistoryEntry, TaskStatus } from '../types';
+import { MainUIProps, HistoryEntry, TaskStatus, UserProgress } from '../types';
 import { generateErrorMessage } from '../utils/llmService';
+import { initializeProgress, updateProgress } from '../utils/badgeManager';
+import { getDifficultyForConcept } from '../utils/difficultyManager';
+import { totalQuestionsAcrossAllThemes } from '../utils/questionTotals';
 
 // Import components
 import { TaskList } from './TaskList';
@@ -16,6 +19,10 @@ import { HistoryPopup } from './HistoryPopup';
 import { FeedbackAnimations } from './FeedbackAnimations';
 import { OutputDisplay } from './OutputDisplay';
 import { MasteryProgress } from './MasteryProgress';
+import { BadgeDisplay } from './BadgeDisplay';
+import { SQLEditor } from './SQLEditor';
+import { DifficultyIndicator } from './DifficultyIndicator';
+import { ConceptsPopup } from './ConceptsPopup';
 
 export function MainUI({
   initialOutput,
@@ -37,10 +44,18 @@ export function MainUI({
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [showErrorAnimation, setShowErrorAnimation] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+<<<<<<< HEAD
   // set variables to track attempts, hints, and optimizations
   const [attempts, setAttempts] = useState(0);
   const [hintsUsed, setHintsUsed] = useState(false);
 
+=======
+  const [userProgress, setUserProgress] = useState<UserProgress>(initializeProgress());
+  const [isConceptsPopupOpen, setIsConceptsPopupOpen] = useState(false);
+  const [popupTitle, setPopupTitle] = useState('');
+  const [conceptsToShow, setConceptsToShow] = useState<string[]>([]);
+  const [isCompletedList, setIsCompletedList] = useState(false);
+>>>>>>> feature-frontend
 
   // Use custom typewriter hook for output animation
   const { displayText, isTyping } = useTypewriter(output, output.includes('Error:'));
@@ -67,13 +82,46 @@ export function MainUI({
     setMasteryLevels(concepts.map(() => 0.2));
   }, [concepts]);
 
+  // Get current difficulty
+  const currentDifficulty = getDifficultyForConcept(concept);
+
+  const totalQuestions = totalQuestionsAcrossAllThemes;
+  const totalConcepts = AllConcepts.length;
+
+  const handleShowCompletedConcepts = () => {
+    setConceptsToShow(userProgress.uniqueConcepts);
+    setPopupTitle('Mastered Concepts');
+    setIsCompletedList(true);
+    setIsConceptsPopupOpen(true);
+  };
+
+  const handleShowAllConcepts = () => {
+    setConceptsToShow(AllConcepts);
+    setPopupTitle('All SQL Concepts');
+    setIsCompletedList(false);
+    setIsConceptsPopupOpen(true);
+  };
+  
+  const handleUpdateProgress = (questionCompleted: boolean, newConcept?: string) => {
+    const updatedProgress = updateProgress(userProgress, questionCompleted, newConcept);
+    setUserProgress(updatedProgress);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
 
+    console.log('=== handleSubmit 开始 ===');
+    console.log('isLoading before:', isLoading);
+
     try {
       setIsLoading(true);
+<<<<<<< HEAD
       setAttempts(prev => prev + 1);
+=======
+      console.log('setIsLoading(true) 调用');
+      
+>>>>>>> feature-frontend
       const themeQueries = Queries[theme as keyof typeof Queries];
       const conceptQueries = themeQueries[concept as keyof typeof themeQueries];
       
@@ -84,7 +132,11 @@ export function MainUI({
       
       const expected = conceptQueries.expected[randomChoice];
       
-      const response = await fetch('http://localhost:3000/submit-query', {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const isDev = import.meta.env.MODE === 'development';
+      const finalApiUrl = apiUrl || (isDev ? 'http://localhost:3000' : 'http://44.204.27.181:3000');
+      
+      const response = await fetch(`${finalApiUrl}/submit-query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userQuery: input, expected, attempts, hintsUsed}),
@@ -151,10 +203,18 @@ export function MainUI({
         setTimeout(() => setShowErrorAnimation(false), 1500);
       }
 
-      // Set the new output and clear input
+      // Update user progress
+      const conceptJustMastered = isCorrect && newMastery >= 0.8 && !userProgress.uniqueConcepts.includes(concept);
+      handleUpdateProgress(true, conceptJustMastered ? concept : undefined);
+
+      console.log('请求成功，准备重置状态');
       setOutput(narrative);
       setInput('');
+      setIsLoading(false);
+      console.log('setIsLoading(false) 调用');
+      
     } catch (error) {
+      console.log('请求失败:', error);
       const basicErrorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       
       setShowErrorAnimation(true);
@@ -208,6 +268,8 @@ export function MainUI({
         setIsLoading(false);
       }
     }
+    
+    console.log('=== handleSubmit 结束 ===');
   };
 
   // Helper to toggle the history popup
@@ -225,6 +287,7 @@ export function MainUI({
         showError={showErrorAnimation}
       />
       
+<<<<<<< HEAD
       <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
         <div className="flex flex-col h-full">
           <div ref={outputContainerRef} className="flex-grow mb-4 rounded-xl p-4 overflow-auto bg-gray-800">
@@ -243,36 +306,83 @@ export function MainUI({
               {hintsUsed ? "Hide Hint" : "Show Hint"}
             </button>
 
+=======
+      <div className="min-h-screen flex flex-col">
+        {/* Header with badges */}
+        <header className="bg-gray-800 border-b border-gray-700 p-2">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-0.5">
+              <h1 className="text-lg font-bold text-white">SQL Learning Platform</h1>
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <span>Completed Questions: {userProgress.completedQuestions} / {totalQuestions}</span>
+                <span>|</span>
+                <span>Mastered Concepts: 
+                  <button onClick={handleShowCompletedConcepts} className="text-blue-400 hover:underline focus:outline-none mx-1">
+                    {userProgress.completedConcepts}
+                  </button>
+                  /
+                  <button onClick={handleShowAllConcepts} className="text-blue-400 hover:underline focus:outline-none mx-1">
+                    {totalConcepts}
+                  </button>
+                </span>
+              </div>
+            </div>
+            <BadgeDisplay badges={userProgress.badges} />
+          </div>
+        </header>
+
+        {/* Main content */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
+          <div className="flex flex-col h-full">
+            <div ref={outputContainerRef} className="flex-grow mb-4 rounded-xl p-4 overflow-auto bg-gray-800">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold flex items-center">
+                  <ListChecks className="w-5 h-5 mr-2" />
+                  Task Board
+                </h3>
+                <DifficultyIndicator
+                  level={currentDifficulty.level}
+                  description={currentDifficulty.description}
+                />
+              </div>
+              
+              <TaskList tasks={tasks} />
+              
+>>>>>>> feature-frontend
               <OutputDisplay
                 displayText={displayText}
                 isTyping={isTyping}
               />
+<<<<<<< HEAD
               
+=======
+            </div>
+
+            <div className="mb-4">
+              <SQLEditor
+                value={input}
+                onChange={setInput}
+                onSubmit={handleSubmit}
+                isLoading={isLoading}
+              />
+            </div>
+>>>>>>> feature-frontend
           </div>
 
-          <div className="relative h-12 mb-4">
-            <QueryInputForm
-              input={input}
-              setInput={setInput}
-              onSubmit={handleSubmit}
-              isLoading={isLoading}
-              toggleHistory={toggleHistory}
-            />
-            
-            <HistoryPopup
-              isOpen={isHistoryOpen}
-              onClose={() => setIsHistoryOpen(false)}
-              history={history}
-              onUseQuery={useQueryFromHistory}
-            />
+          <div className="space-y-4">
+            <MasteryProgress concepts={concepts} masteryLevels={masteryLevels} />
+            <SchemaDisplay schemas={initialSchemas} theme={theme} />
           </div>
-        </div>
-
-        <div className="space-y-4">
-          <MasteryProgress concepts={concepts} masteryLevels={masteryLevels} />
-          <SchemaDisplay schemas={initialSchemas} theme={theme} />
         </div>
       </div>
+
+      <ConceptsPopup
+        isOpen={isConceptsPopupOpen}
+        onClose={() => setIsConceptsPopupOpen(false)}
+        title={popupTitle}
+        concepts={conceptsToShow}
+        isCompletedList={isCompletedList}
+      />
     </>
   );
 }

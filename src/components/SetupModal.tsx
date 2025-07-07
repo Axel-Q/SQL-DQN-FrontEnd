@@ -29,29 +29,67 @@ export function SetupModal({ isOpen, onClose, onComplete }: SetupModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form data first
+    if (concepts.length === 0) {
+      setError('Please select at least one concept to continue.');
+      return;
+    }
+    
     setIsLoading(true);
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3000/setup-form', {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const isDev = import.meta.env.MODE === 'development';
+      
+      console.log('Making request to API');
+      console.log('Environment:', import.meta.env.MODE);
+      console.log('VITE_API_URL:', apiUrl);
+      console.log('Selected concepts:', concepts);
+
+      // Smart fallback: localhost for dev, EC2 for production
+      const finalApiUrl = apiUrl || (isDev ? 'http://localhost:3000' : 'http://44.204.27.181:3000');
+      
+      if (!apiUrl) {
+        console.log(`No API URL configured, using ${isDev ? 'localhost' : 'EC2'} fallback:`, finalApiUrl);
+      }
+
+      const fullUrl = `${finalApiUrl}/setup-form`;
+      console.log('Full URL:', fullUrl);
+      
+      const requestBody = { conceptsLength: concepts.length };
+      console.log('Request body:', requestBody);
+      
+      const response = await fetch(fullUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conceptsLength: concepts.length }),
+        body: JSON.stringify(requestBody),
         mode: 'cors',
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText);
+        console.error('Response error:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('Response data:', data);
 
+      // Important: Reset loading state before calling onComplete
+      setIsLoading(false);
+      
       // Pass theme, concepts and action to the parent
       onComplete({ theme, concepts, action: data.action });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      // Reset loading only on error
+      console.error('Request error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      setError(`Request failed: ${errorMessage}`);
+      // Reset loading state on error
       setIsLoading(false);
     }
   };
@@ -153,11 +191,18 @@ export function SetupModal({ isOpen, onClose, onComplete }: SetupModalProps) {
           <button
             type="submit"
             disabled={isLoading}
+            onClick={(e) => {
+              console.log('Start Game button clicked');
+              // The form onSubmit will handle the actual logic
+            }}
             className="w-full py-2 bg-blue-500 rounded-lg font-medium hover:bg-blue-600
                      disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? (
-              <span className="ml-2 inline-block w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></span>
+              <div className="flex items-center justify-center">
+                <span className="inline-block w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></span>
+                Processing...
+              </div>
             ) : (
               'Start Game'
             )}
