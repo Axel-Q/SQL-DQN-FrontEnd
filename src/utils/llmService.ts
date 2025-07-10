@@ -96,10 +96,26 @@ export async function getGeneratedQuery(
     : expected;
   console.log('Expected result:', expectedResult);
 
-  // Build the LLM prompt content
+  // Build the LLM prompt content with difficulty-based storytelling
+  const getDifficultyInstructions = (coefficient: number) => {
+    if (coefficient <= 0.3) {
+      return "Use simple, straightforward language. Keep the narrative linear and easy to follow. Focus on basic concepts and clear objectives.";
+    } else if (coefficient <= 0.6) {
+      return "Use moderate complexity. Include some twists or additional context, but keep the main objective clear. Add some character development or environmental details.";
+    } else {
+      return "Use complex, layered storytelling. Include multiple plot threads, sophisticated character motivations, and intricate world-building details. Make the challenge feel more sophisticated and demanding.";
+    }
+  };
+
+  const getWordLimit = (coefficient: number) => {
+    if (coefficient <= 0.3) return "30-40 words";
+    if (coefficient <= 0.6) return "40-50 words";
+    return "50-60 words";
+  };
+
   const content =
     'You are a creative storyteller with knowledge of SQL database queries. ' +
-    'Generate an **engaging narrative within 50 words** based on a given theme that continues the ongoing storyline. ' +
+    `Generate an **engaging narrative within ${getWordLimit(coefficient)}** based on a given theme that continues the ongoing storyline. ` +
     'Your story must include:\n\n' +
     `1. A continuation of the previous narrative: ${historyContext}\n` +
     `2. A challenge or mission that can only be solved by running a ${concept} SQL query ` +
@@ -109,16 +125,20 @@ export async function getGeneratedQuery(
     'returns the specified expected result.\n\n' +
     '[Details to incorporate into the story]\n' +
     `- Theme: ${theme}\n` +
-    `- Expected Result:\n[${expectedResult}]\n\n` +
+    `- Expected Result:\n[${expectedResult}]\n` +
+    `- Difficulty Level: ${coefficient} (0.1=easiest, 1.0=hardest)\n\n` +
+    '[Storytelling Style Based on Difficulty]\n' +
+    `${getDifficultyInstructions(coefficient)}\n\n` +
     '[Format of your response]\n' +
-    "1. Provide a narrative or storyline set within 50 words in bullets in the specified theme that continues from the previous storyline.\n" +
-    "2. Do NOT provide the SQL query yourself; only ask the player to supply it.\n\n" +
-    `3. Ask different question according to the difficulty coefficient ${coefficient}, while 0.1 is the easiest and 1.0 is the most difficult.\n\n` +
+    `1. Provide a narrative or storyline within ${getWordLimit(coefficient)} in the specified theme that continues from the previous storyline.\n` +
+    "2. Do NOT provide the SQL query yourself; only ask the player to supply it.\n" +
+    "3. Adjust the complexity of your narrative based on the difficulty coefficient.\n\n" +
     '[Example Guidance]\n' +
     "- If the theme is 'Cyberpunk,' your story might refer to futuristic cities, neon lights, or secret hacking missions.\n" +
     " - Conclude with a direct question like:\n" +
     "'Neo has discovered three individuals who show signs of rebellion. He needs a query that will list these rebels. " +
-    "What SQL command can you use to retrieve only those entries from the table(s)?'\n";
+    "What SQL command can you use to retrieve only those entries from the table(s)?'\n" +
+    `- For difficulty ${coefficient}: ${coefficient <= 0.3 ? 'Keep it simple and direct.' : coefficient <= 0.6 ? 'Add moderate complexity.' : 'Make it sophisticated and challenging.'}`;
 
   // Post to your LLM endpoint
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
