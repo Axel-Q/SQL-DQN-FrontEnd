@@ -4,6 +4,7 @@ import { getGeneratedQuery } from './llmService';
 export async function generateQueryForConcept(
   theme: ThemeType | string, 
   concept: string,
+  coefficient: number,
   randomChoiceParam?: number
 ) {
   const safeTheme = theme as ThemeType;
@@ -25,6 +26,7 @@ export async function generateQueryForConcept(
   const narrative = await getGeneratedQuery(
     safeTheme,
     concept,
+    coefficient,
     chosenInput,
     chosenExpected
   );

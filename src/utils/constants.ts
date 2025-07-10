@@ -457,7 +457,7 @@ export const Queries: Record<
                     multi_agent_events: [],
                 },
             ],
-            expected: [["UPDATE 1"], ["UPDATE 1"], ["UPDATE 1"], ["UPDATE 1"]],
+            expected: ["UPDATE 1", "UPDATE 1", "UPDATE 1", "UPDATE 1"],
         },
         [AllConcepts[7]]: {
             numOptions: 4,
@@ -469,7 +469,7 @@ export const Queries: Record<
                     multi_agent_events: [],
                 },
             ],
-            expected: [["DELETE 1"], ["DELETE 1"], ["DELETE 1"], ["DELETE 1"]],
+            expected: ["DELETE 1", "DELETE 1", "DELETE 1", "DELETE 1"],
         },
         [AllConcepts[8]]: {
             numOptions: 1,
@@ -614,7 +614,7 @@ export const Queries: Record<
                         {
                             quest_name: "Defend Minas Tirith",
                             quest_description:
-                                "Hold the White City against Sauron’s armies.",
+                                "Hold the White City against Sauron's armies.",
                         },
                         {
                             quest_name: "Crown the King",
@@ -639,7 +639,7 @@ export const Queries: Record<
                             quest_name: "Protect the Ring",
                             hero_id: 6,
                             reference:
-                                "Samwise pledges never to leave Frodo’s side.",
+                                "Samwise pledges never to leave Frodo's side.",
                         },
                         {
                             quest_name: "Assemble the Fellowship",
@@ -741,7 +741,7 @@ export const Queries: Record<
                     {
                         quest_name: "Defend Minas Tirith",
                         quest_description:
-                            "Hold the White City against Sauron’s armies.",
+                            "Hold the White City against Sauron's armies.",
                     },
                     {
                         quest_name: "Crown the King",
@@ -764,7 +764,7 @@ export const Queries: Record<
                         quest_name: "Protect the Ring",
                         hero_id: 6,
                         reference:
-                            "Samwise pledges never to leave Frodo’s side.",
+                            "Samwise pledges never to leave Frodo's side.",
                     },
                     {
                         quest_name: "Assemble the Fellowship",
@@ -857,7 +857,7 @@ export const Queries: Record<
                         {
                             quest_name: "Defend Minas Tirith",
                             quest_description:
-                                "Hold the White City against Sauron’s armies.",
+                                "Hold the White City against Sauron's armies.",
                         },
                         {
                             quest_name: "Crown the King",
@@ -894,7 +894,7 @@ export const Queries: Record<
                             quest_name: "Protect the Ring",
                             hero_id: 6,
                             reference:
-                                "Samwise pledges never to leave Frodo’s side.",
+                                "Samwise pledges never to leave Frodo's side.",
                         },
                         {
                             quest_name: "Assemble the Fellowship",
@@ -1054,7 +1054,7 @@ export const Queries: Record<
                             quest_name: "Protect the Ring",
                             hero_id: 6,
                             reference:
-                                "Samwise pledges never to leave Frodo’s side.",
+                                "Samwise pledges never to leave Frodo's side.",
                         },
                         {
                             quest_name: "Assemble the Fellowship",
@@ -1135,7 +1135,7 @@ export const Queries: Record<
                         quest_name: "Protect the Ring",
                         hero_id: 6,
                         reference:
-                            "Samwise pledges never to leave Frodo’s side.",
+                            "Samwise pledges never to leave Frodo's side.",
                     },
                 ],
             ],
@@ -1274,7 +1274,7 @@ export const Queries: Record<
                             quest_name: "Protect the Ring",
                             hero_id: 6,
                             reference:
-                                "Samwise pledges never to leave Frodo’s side.",
+                                "Samwise pledges never to leave Frodo's side.",
                         },
                         {
                             quest_name: "Assemble the Fellowship",
@@ -1536,7 +1536,7 @@ export const Queries: Record<
                         },
                         {
                             movie_name: "The Godfather",
-                            review_text: "An offer you can’t refuse.",
+                            review_text: "An offer you can't refuse.",
                             rating: 10,
                         },
                         {
@@ -1633,7 +1633,7 @@ export const Queries: Record<
                     },
                     {
                         movie_name: "The Godfather",
-                        review_text: "An offer you can’t refuse.",
+                        review_text: "An offer you can't refuse.",
                         rating: 10,
                     },
                     {
@@ -1734,7 +1734,7 @@ export const Queries: Record<
                         },
                         {
                             movie_name: "The Godfather",
-                            review_text: "An offer you can’t refuse.",
+                            review_text: "An offer you can't refuse.",
                             rating: 10,
                         },
                         {
@@ -1870,7 +1870,7 @@ export const Queries: Record<
                         },
                         {
                             movie_name: "The Godfather",
-                            review_text: "An offer you can’t refuse.",
+                            review_text: "An offer you can't refuse.",
                             rating: 10,
                         },
                         {
@@ -1948,7 +1948,7 @@ export const Queries: Record<
                     },
                     {
                         movie_name: "The Godfather",
-                        review_text: "An offer you can’t refuse.",
+                        review_text: "An offer you can't refuse.",
                         rating: 10,
                     },
                 ],
