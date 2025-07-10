@@ -39,7 +39,7 @@ export function MainUI({
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [tasks, setTasks] = useState<TaskStatus[]>([]);
   const [input, setInput] = useState('');
-  const [masteryLevels, setMasteryLevels] = useState<number[]>([0.2]);
+  const [masteryLevels, setMasteryLevels] = useState<number[]>([0.6]);
   const [isLoading, setIsLoading] = useState(false);
   const [concept, setConcept] = useState(initialConcept);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
@@ -174,6 +174,7 @@ export function MainUI({
       
       // Update state with values from response
       setConcept(newConcept);
+      console.log("New Concept:", newConcept)
       setMasteryLevels(newMastery);
       console.log('Mastery Levels:', newMastery);
       
