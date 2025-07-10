@@ -165,9 +165,9 @@ export async function generateErrorMessage({
   const content = 
     'You are an SQL tutor helping a student. ' +
     'Provide a helpful, informative explanation of what went wrong with their SQL query. ' +
-    'Or if the error message is none, just give a hint of how to solve the problem.'+
+    // 'Or if the error message is none, just give a hint of how to solve the problem.'+
     'Be encouraging and educational. ' +
-    'Include a hint about how to fix the issue without giving the full answer. ' +
+    // 'Include a hint about how to fix the issue without giving the full answer. ' +
     'Keep your response under 100 words. ' +
     'Format your response in conversational language. ' +
     '\n\n' +
@@ -195,4 +195,27 @@ export async function generateErrorMessage({
     console.error('Error generating helpful error message:', error);
     return errorMessage; // Return the original error message as fallback
   }
+}
+
+export async function getHintFromLLM(theme: string, concept: string, input: any, expected: any): Promise<string> {
+  const content =
+    `You are an SQL tutor. Give a helpful, concise hint (max 40 words) for a student struggling with the following SQL concept: ${concept} in the theme: ${theme}. ` +
+    `Base your hint on the following table(s) and expected result:\n` +
+    `Tables: ${JSON.stringify(input)}\nExpected: ${JSON.stringify(expected)}\n` +
+    `Do NOT give the full answer, just a nudge in the right direction.`;
+
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'deepseek/deepseek-chat-v3-0324:free',
+      messages: [{ role: 'user', content }],
+    }),
+  });
+
+  const data = await response.json();
+  return data.choices[0].message.content;
 }
