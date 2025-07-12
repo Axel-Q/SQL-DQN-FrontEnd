@@ -134,18 +134,9 @@ export function MainUI({
       
       const apiUrl = import.meta.env.VITE_API_URL;
       const isDev = import.meta.env.MODE === 'development';
-      let finalApiUrl = apiUrl || (isDev ? 'http://localhost:3000' : 'http://3.83.92.215:3000');
       
-      // Remove trailing slash if present
-      if (finalApiUrl.endsWith('/')) {
-        finalApiUrl = finalApiUrl.slice(0, -1);
-      }
-      
-      // Force HTTP protocol for cloud deployment (no SSL certificate)
-      if (finalApiUrl.startsWith('https://')) {
-        finalApiUrl = finalApiUrl.replace('https://', 'http://');
-        console.log('Converted HTTPS to HTTP for cloud deployment:', finalApiUrl);
-      }
+      // Use proxy for production, direct URL for development
+      const finalApiUrl = apiUrl || (isDev ? 'http://localhost:3000' : '/api');
       
       const questionId = randomChoice; // Or use your actual question's unique integer ID
 
