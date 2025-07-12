@@ -6,16 +6,13 @@ interface MasteryProgressProps {
 }
 
 export function MasteryProgress({ concepts, masteryLevels }: MasteryProgressProps) {
-  const totalProgress = masteryLevels.reduce((sum, level) => sum + level, 0) / masteryLevels.length * 100;
-
   return (
     <div className="bg-gray-800 rounded-xl p-4">
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4">
         <h3 className="text-xl font-semibold flex items-center">
           <Trophy className="w-5 h-5 mr-2 text-yellow-500" />
           SQL Mastery Progress
         </h3>
-        <span className="text-gray-400">{Math.round(totalProgress)}% Complete</span>
       </div>
 
       <div className="grid grid-cols-10 gap-2 mb-8">
