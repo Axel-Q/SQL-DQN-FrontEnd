@@ -65,8 +65,10 @@ export function SetupModal({ isOpen, onClose, onComplete }: SetupModalProps) {
       console.log('VITE_API_URL:', apiUrl);
       console.log('Selected concepts:', concepts);
 
-      // Use proxy for production, direct URL for development
-      const finalApiUrl = apiUrl || (isDev ? 'http://localhost:3000' : '/api');
+      // Force proxy in production to avoid HTTPS upgrade issues
+      const finalApiUrl = isDev 
+        ? (apiUrl || 'http://localhost:3000')  // Dev: use env var or localhost
+        : '/api';  // Production: always use proxy
       
       console.log('Final API URL:', finalApiUrl);
 
