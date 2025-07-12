@@ -66,7 +66,18 @@ export function SetupModal({ isOpen, onClose, onComplete }: SetupModalProps) {
       console.log('Selected concepts:', concepts);
 
       // Smart fallback: localhost for dev, EC2 for production
-      const finalApiUrl = apiUrl || (isDev ? 'http://localhost:3000' : 'http://44.204.27.181:3000');
+      let finalApiUrl = apiUrl || (isDev ? 'http://localhost:3000' : 'http://3.83.92.215:3000');
+      
+      // Remove trailing slash if present
+      if (finalApiUrl.endsWith('/')) {
+        finalApiUrl = finalApiUrl.slice(0, -1);
+      }
+      
+      // Force HTTP protocol for cloud deployment (no SSL certificate)
+      if (finalApiUrl.startsWith('https://')) {
+        finalApiUrl = finalApiUrl.replace('https://', 'http://');
+        console.log('Converted HTTPS to HTTP for cloud deployment:', finalApiUrl);
+      }
       
       if (!apiUrl) {
         console.log(`No API URL configured, using ${isDev ? 'localhost' : 'EC2'} fallback:`, finalApiUrl);
