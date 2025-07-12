@@ -9,6 +9,9 @@ interface SetupModalProps {
     theme: ThemeType;
     concepts: string[];
     action: string;
+    narrative: string;
+    randomChoice: number;
+    concept: string;
   }) => void;
 }
 
@@ -24,6 +27,7 @@ export function SetupModal({ isOpen, onClose, onComplete }: SetupModalProps) {
     "Initializing AI agent...",
     "Preparing game environment...",
     "Loading theme data...",
+    "Generating first quest...",
     "Finalizing setup..."
   ];
 
@@ -105,15 +109,35 @@ export function SetupModal({ isOpen, onClose, onComplete }: SetupModalProps) {
       setLoadingStep(3);
       await new Promise(resolve => setTimeout(resolve, 400));
       
-      // Step 5: Finalizing setup
+      // Step 5: Generating first quest
       setLoadingStep(4);
-      await new Promise(resolve => setTimeout(resolve, 200));
+      const actionNumber = parseInt(data.action, 10);
+      const chosenConcept = concepts[actionNumber];
+      
+      // Import the helper function dynamically
+      const { generateQueryForConcept } = await import('../utils/queryHelpers');
+      const { narrative, randomChoice: generatedChoice } = await generateQueryForConcept(
+        theme,
+        chosenConcept,
+        0.5, // Coefficient can be adjusted as needed
+      );
+      
+      // Step 6: Finalizing setup
+      setLoadingStep(5);
+      await new Promise(resolve => setTimeout(resolve, 400));
 
       // Important: Reset loading state before calling onComplete
       setIsLoading(false);
       
-      // Pass theme, concepts and action to the parent
-      onComplete({ theme, concepts, action: data.action });
+      // Pass theme, concepts, action and generated content to the parent
+      onComplete({ 
+        theme, 
+        concepts, 
+        action: data.action, 
+        narrative, 
+        randomChoice: generatedChoice,
+        concept: chosenConcept
+      });
     } catch (err) {
       console.error('Request error:', err);
       const errorMessage = err instanceof Error ? err.message : 'An error occurred';

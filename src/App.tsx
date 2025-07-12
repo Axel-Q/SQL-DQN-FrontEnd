@@ -4,9 +4,8 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { MainUI } from './components/MainUI';
 import { SetupModal } from './components/SetupModal';
 import { ThemeTables, ThemeType } from './utils/constants';
-import { generateQueryForConcept } from './utils/queryHelpers';
 
-type GameState = 'loading' | 'welcome' | 'main';
+type GameState = 'loading' | 'welcome' | 'main' | 'entering-game';
 
 function App() {
   const [gameState, setGameState] = useState<GameState>('loading');
@@ -31,26 +30,20 @@ function App() {
   // since we used a fetch request to the server,
   // we've already passed theme and concepts to the backend
   // and received the action number in response.
-  const handleSetupComplete = async ({ theme: chosenTheme, concepts, action }: { theme: 'cyberpunk' | 'fantasy' | 'real-world'; concepts: string[]; action: string }) => {
+  const handleSetupComplete = ({ theme: chosenTheme, concepts, action, narrative, randomChoice: generatedChoice, concept: chosenConcept }: { theme: 'cyberpunk' | 'fantasy' | 'real-world'; concepts: string[]; action: string; narrative: string; randomChoice: number; concept: string }) => {
     setTheme(chosenTheme);
     setConcepts(concepts);
     setSchema(ThemeTables[chosenTheme]);
-
-    const actionNumber = parseInt(action, 10);
-    const chosenConcept = concepts[actionNumber];
     setConcept(chosenConcept);
-
-    // Use the helper function
-    const { narrative, randomChoice: generatedChoice } = await generateQueryForConcept(
-      chosenTheme,
-      chosenConcept,
-      0.5, // Coefficient can be adjusted as needed
-    );
-    
     setRandomChoice(generatedChoice);
     setSystemOutput(narrative);
     setIsSetupModalOpen(false);
-    setGameState('main');
+    setGameState('entering-game');
+    
+    // Enter game with a brief delay for smooth transition
+    setTimeout(() => {
+      setGameState('main');
+    }, 500);
   };
 
   return (
@@ -61,6 +54,15 @@ function App() {
         <WelcomeScreen
           onCustomSetup={() => setIsSetupModalOpen(true)}
         />
+      )}
+
+      {gameState === 'entering-game' && (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-xl text-blue-400">Entering game...</p>
+          </div>
+        </div>
       )}
 
       {gameState === 'main' && theme && (
