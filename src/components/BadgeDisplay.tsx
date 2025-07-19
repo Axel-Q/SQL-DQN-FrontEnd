@@ -4,6 +4,8 @@ import { Badge } from '../types';
 
 interface BadgeDisplayProps {
   badges: Badge[];
+  completedQuestions: number;
+  completedConcepts: number;
 }
 
 const getBadgeIcon = (iconName: string) => {
@@ -25,7 +27,7 @@ const getBadgeIcon = (iconName: string) => {
   }
 };
 
-export const BadgeDisplay: React.FC<BadgeDisplayProps> = ({ badges }) => {
+export const BadgeDisplay: React.FC<BadgeDisplayProps> = ({ badges, completedQuestions, completedConcepts }) => {
   // Sort badges by order for guided progression
   const sortedBadges = [...badges].sort((a, b) => a.order - b.order);
   
@@ -80,8 +82,8 @@ export const BadgeDisplay: React.FC<BadgeDisplayProps> = ({ badges }) => {
                       width: `${Math.min(
                         100,
                         (badge.type === 'questions' 
-                          ? badges[0].requirement 
-                          : badges[1].requirement) * 100 / badge.requirement
+                          ? completedQuestions 
+                          : completedConcepts) * 100 / badge.requirement
                       )}%`
                     }}
                   />

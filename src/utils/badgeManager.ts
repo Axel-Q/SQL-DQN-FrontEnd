@@ -71,6 +71,7 @@ const BADGES: Badge[] = [
 ];
 
 export const initializeProgress = (): UserProgress => {
+  // Always return fresh progress for each session
   return {
     completedConcepts: 0,
     completedQuestions: 0,

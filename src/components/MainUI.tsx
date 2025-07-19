@@ -109,6 +109,8 @@ export function MainUI({
     setUserProgress(updatedProgress);
   };
 
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -194,7 +196,8 @@ export function MainUI({
       // Generate the next query
       const { narrative, randomChoice: newRandomChoice } = await generateQueryForConcept(
         theme,
-        newConcept
+        newConcept,
+        0.5 // Default coefficient
       );
       
       setRandomChoice(newRandomChoice);
@@ -212,8 +215,11 @@ export function MainUI({
       }
 
       // Update user progress
-      const conceptJustMastered = isCorrect && newMastery >= 0.8 && !userProgress.uniqueConcepts.includes(concept);
-      handleUpdateProgress(true, conceptJustMastered ? concept : undefined);
+      // Find the index of the current concept in the concepts array
+      const currentConceptIndex = concepts.indexOf(concept);
+      const conceptJustMastered = isCorrect && currentConceptIndex >= 0 && newMastery[currentConceptIndex] >= 0.8 && !userProgress.uniqueConcepts.includes(concept);
+      // Only count as completed if the answer is correct
+      handleUpdateProgress(isCorrect, conceptJustMastered ? concept : undefined);
 
       console.log('请求成功，准备重置状态');
       setOutput(narrative);
@@ -334,9 +340,14 @@ export function MainUI({
                     {totalConcepts}
                   </button>
                 </span>
+
               </div>
             </div>
-            <BadgeDisplay badges={userProgress.badges} />
+            <BadgeDisplay 
+              badges={userProgress.badges} 
+              completedQuestions={userProgress.completedQuestions}
+              completedConcepts={userProgress.completedConcepts}
+            />
           </div>
         </header>
 
