@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Trophy, Star, Target, Award, Medal, Book } from 'lucide-react';
 import { Badge } from '../types';
 
@@ -113,6 +113,30 @@ export const BadgeDisplay: React.FC<BadgeDisplayProps> = ({ badges, completedQue
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}; 
+
+// BadgePopup: shows a temporary popup when a badge is earned
+interface BadgePopupProps {
+  badge: Badge;
+  onClose: () => void;
+}
+
+export const BadgePopup: React.FC<BadgePopupProps> = ({ badge, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 100); // 0.1 second
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center pointer-events-none">
+      <div className="mt-16 bg-white/80 border border-green-400 rounded-xl shadow-xl px-8 py-6 flex flex-col items-center animate-bounce-in pointer-events-auto backdrop-blur-sm" style={{minWidth: 320}}>
+        <div className="text-green-500 mb-2 text-4xl">{getBadgeIcon(badge.icon)}</div>
+        <div className="text-lg font-bold text-green-700 mb-1">Congratulations!</div>
+        <div className="text-base font-semibold text-gray-800 mb-1">You earned the <span className="text-green-600">{badge.name}</span> badge!</div>
+        <div className="text-sm text-gray-500 text-center">{badge.shortDescription}</div>
       </div>
     </div>
   );

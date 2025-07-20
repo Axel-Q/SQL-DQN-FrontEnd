@@ -5,7 +5,7 @@ import { generateQueryForConcept } from '../utils/queryHelpers';
 import { formatDBResult } from '../utils/formatters';
 import { useTypewriter } from '../hooks/useTypewriter';
 import { animations } from '../styles/animations';
-import { MainUIProps, HistoryEntry, TaskStatus, UserProgress } from '../types';
+import { MainUIProps, HistoryEntry, TaskStatus, UserProgress, Badge } from '../types';
 import { generateErrorMessage, getHintFromLLM, getCorrectAnswerFromLLM } from '../utils/llmService';
 import { initializeProgress, updateProgress } from '../utils/badgeManager';
 import { getDifficultyForConcept } from '../utils/difficultyManager';
@@ -24,6 +24,7 @@ import { SQLEditor } from './SQLEditor';
 import { DifficultyIndicator } from './DifficultyIndicator';
 import { ConceptsPopup } from './ConceptsPopup';
 import { UserBehaviour } from './UserBahaviour';
+import { BadgePopup } from './BadgeDisplay';
 
 export function MainUI({
   initialOutput,
@@ -61,6 +62,7 @@ export function MainUI({
   const [popupTitle, setPopupTitle] = useState('');
   const [conceptsToShow, setConceptsToShow] = useState<string[]>([]);
   const [isCompletedList, setIsCompletedList] = useState(false);
+  const [recentBadge, setRecentBadge] = useState<null | Badge>(null);
 
   
 
@@ -490,6 +492,22 @@ export function MainUI({
     // eslint-disable-next-line
   }, [showCorrectAnswer, theme, concept, randomChoice]);
 
+  // Detect new badge unlocks
+  useEffect(() => {
+    const unlocked = userProgress.badges.filter(b => b.unlocked);
+    if (unlocked.length > 0) {
+      // Only show popup for the most recently unlocked badge
+      const lastUnlocked = unlocked[unlocked.length - 1];
+      // Only show if this badge wasn't already shown
+      if (!recentBadge || recentBadge.id !== lastUnlocked.id) {
+        setRecentBadge(lastUnlocked);
+      }
+    }
+  }, [userProgress.badges]);
+
+  // Handler to close badge popup
+  const handleCloseBadgePopup = () => setRecentBadge(null);
+
   return (
     <>
       <style>{animations.success + animations.error + animations.tooltip}</style>
@@ -612,6 +630,9 @@ export function MainUI({
         concepts={conceptsToShow}
         isCompletedList={isCompletedList}
       />
+      {recentBadge && (
+        <BadgePopup badge={recentBadge} onClose={handleCloseBadgePopup} />
+      )}
     </>
   );
 }
