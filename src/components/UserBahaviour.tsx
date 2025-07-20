@@ -5,12 +5,16 @@ interface UserBehaviourProps {
   hintsUsed: boolean;
   hintText?: string;
   onHintToggle: () => void;
+  onCorrectAnswerToggle: () => void;
+  showCorrectAnswer: boolean;
 }
 
 export const UserBehaviour: React.FC<UserBehaviourProps> = ({
   attempts,
   hintsUsed,
-  onHintToggle
+  onHintToggle,
+  onCorrectAnswerToggle,
+  showCorrectAnswer
 }) => {
   return (
     <div>
@@ -25,17 +29,35 @@ export const UserBehaviour: React.FC<UserBehaviourProps> = ({
               type="checkbox"
               checked={hintsUsed}
               onChange={onHintToggle}
-              disabled={hintsUsed}
               className="sr-only peer"
             />
             <div className={
               "w-10 h-5 rounded-full transition-colors duration-200 " +
-              (hintsUsed ? "bg-blue-600" : "bg-gray-600") +
-              (hintsUsed ? " cursor-not-allowed" : "")
+              (hintsUsed ? "bg-blue-600" : "bg-gray-600")
             }>
               <div className={
                 "absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-200 " +
                 (hintsUsed ? "translate-x-5" : "")
+              }></div>
+            </div>
+          </label>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-300 font-medium">Get Answer</span>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showCorrectAnswer}
+              onChange={onCorrectAnswerToggle}
+              className="sr-only peer"
+            />
+            <div className={
+              "w-10 h-5 rounded-full transition-colors duration-200 " +
+              (showCorrectAnswer ? "bg-green-600" : "bg-gray-600")
+            }>
+              <div className={
+                "absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-200 " +
+                (showCorrectAnswer ? "translate-x-5" : "")
               }></div>
             </div>
           </label>

@@ -6,7 +6,7 @@ import { formatDBResult } from '../utils/formatters';
 import { useTypewriter } from '../hooks/useTypewriter';
 import { animations } from '../styles/animations';
 import { MainUIProps, HistoryEntry, TaskStatus, UserProgress } from '../types';
-import { generateErrorMessage, getHintFromLLM } from '../utils/llmService';
+import { generateErrorMessage, getHintFromLLM, getCorrectAnswerFromLLM } from '../utils/llmService';
 import { initializeProgress, updateProgress } from '../utils/badgeManager';
 import { getDifficultyForConcept } from '../utils/difficultyManager';
 import { totalQuestionsAcrossAllThemes } from '../utils/questionTotals';
@@ -39,7 +39,7 @@ export function MainUI({
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [tasks, setTasks] = useState<TaskStatus[]>([]);
   const [input, setInput] = useState('');
-  const [masteryLevels, setMasteryLevels] = useState<number[]>([0.6]);
+  const [masteryLevels, setMasteryLevels] = useState<number[]>(Array(concepts.length).fill(0));
   const [isLoading, setIsLoading] = useState(false);
   const [concept, setConcept] = useState(initialConcept);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
@@ -50,6 +50,10 @@ export function MainUI({
   const [attempts, setAttempts] = useState(0);
   const [hintsUsed, setHintsUsed] = useState(false);
   const [hintText, setHintText] = useState('');
+  const [showCorrectAnswer, setShowCorrectAnswer] = useState(false);
+  const [correctAnswerText, setCorrectAnswerText] = useState('');
+  const [isLoadingNextQuestion, setIsLoadingNextQuestion] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState('');
 
 
   const [userProgress, setUserProgress] = useState<UserProgress>(initializeProgress());
@@ -109,6 +113,29 @@ export function MainUI({
     setUserProgress(updatedProgress);
   };
 
+  const handleHintToggle = () => {
+    setHintsUsed(!hintsUsed);
+    if (!hintsUsed) {
+      setShowCorrectAnswer(false); // Close correct answer when opening hint
+    }
+    setFeedbackMessage(''); // Clear feedback when toggling hint
+  };
+
+  const handleCorrectAnswerToggle = () => {
+    setShowCorrectAnswer(!showCorrectAnswer);
+    if (!showCorrectAnswer) {
+      setHintsUsed(false); // Close hint when opening correct answer
+    }
+    setFeedbackMessage(''); // Clear feedback when toggling correct answer
+  };
+
+  const handleInputChange = (newInput: string) => {
+    setInput(newInput);
+    // Clear feedback message when user starts typing
+    if (feedbackMessage) {
+      setFeedbackMessage('');
+    }
+  };
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -119,6 +146,112 @@ export function MainUI({
 
     console.log('=== handleSubmit 开始 ===');
     console.log('isLoading before:', isLoading);
+
+    // SECRET CHEAT: If user used "Get Correct Answer", compare their input with the correct answer
+    if (showCorrectAnswer && correctAnswerText) {
+      console.log('Secret cheat: User used Get Correct Answer, comparing input with correct answer');
+      console.log('User input:', input);
+      console.log('Correct answer:', correctAnswerText);
+      
+      // Compare user input with correct answer (case-insensitive, ignore whitespace)
+      const normalizedInput = input.trim().toLowerCase().replace(/\s+/g, ' ');
+      const normalizedCorrect = correctAnswerText.trim().toLowerCase().replace(/\s+/g, ' ');
+      
+      // Check if they are basically the same (allowing for minor differences)
+      const isBasicallySame = normalizedInput === normalizedCorrect || 
+                             normalizedInput.includes(normalizedCorrect) || 
+                             normalizedCorrect.includes(normalizedInput);
+      
+      console.log('Normalized input:', normalizedInput);
+      console.log('Normalized correct:', normalizedCorrect);
+      console.log('Is basically same:', isBasicallySame);
+      
+      if (isBasicallySame) {
+        console.log('Secret cheat: Input matches correct answer, marking as correct');
+        
+        // Simulate correct answer response
+        const mockData = {
+          correct: true,
+          newMastery: masteryLevels,
+          action: '0', // Next concept index
+          resultFromDB: [],
+          message: 'Correct! Moving to next question...'
+        };
+        
+        // Extract all needed values from the mock response
+        const { newMastery, action, resultFromDB, correct } = mockData;
+        const isCorrect = Boolean(correct);
+
+        // Add the task to history
+        setTasks(currentTasks => [
+          ...currentTasks,
+          {
+            taskName: `Task ${currentTasks.length + 1}`,
+            correct: isCorrect,
+            concept,
+            narrative: output
+          }
+        ]);
+
+        // Format the database result
+        const dbResultString = formatDBResult(resultFromDB);
+        
+        // Save the query and result to history
+        setHistory(prev => [...prev, { 
+          userQuery: input, 
+          dbResultString 
+        }]);
+
+        // Show success feedback
+        setFeedbackMessage('Correct! Loading next question...');
+        setIsLoadingNextQuestion(true);
+        
+        // Get the next concept based on the action
+        const newActionNumber = parseInt(action, 10);
+        const newConcept = concepts[newActionNumber];
+        
+        // Update state with values from response
+        setConcept(newConcept);
+        console.log("New Concept:", newConcept)
+        setMasteryLevels(newMastery);
+        console.log('Mastery Levels:', newMastery);
+        
+        // Generate the next query
+        const { narrative, randomChoice: newRandomChoice } = await generateQueryForConcept(
+          theme,
+          newConcept,
+          0.5 // Default coefficient
+        );
+        
+        setRandomChoice(newRandomChoice);
+        setOutput(narrative);
+        
+        // Clear feedback after loading
+        setFeedbackMessage('');
+        setIsLoadingNextQuestion(false);
+
+        // Show success animation
+        setShowSuccessAnimation(true);
+        setTimeout(() => setShowSuccessAnimation(false), 1500);
+        setAttempts(0); // Reset attempts for next question
+        setHintsUsed(false); // Reset for next question
+        setHintText('');
+        setShowCorrectAnswer(false); // Reset correct answer for next question
+        setCorrectAnswerText('');
+
+        // Update user progress
+        const currentConceptIndex = concepts.indexOf(concept);
+        const conceptJustMastered = isCorrect && currentConceptIndex >= 0 && newMastery[currentConceptIndex] >= 0.8 && !userProgress.uniqueConcepts.includes(concept);
+        handleUpdateProgress(isCorrect, conceptJustMastered ? concept : undefined);
+
+        console.log('Secret cheat: Successfully marked as correct');
+        setInput('');
+        setIsLoading(false);
+        return;
+      } else {
+        console.log('Secret cheat: Input does not match correct answer, proceeding with normal validation');
+      }
+    }
 
     try {
       setIsLoading(true);
@@ -174,16 +307,6 @@ export function MainUI({
         }
       ]);
 
-      // Get the next concept based on the action
-      const newActionNumber = parseInt(action, 10);
-      const newConcept = concepts[newActionNumber];
-      
-      // Update state with values from response
-      setConcept(newConcept);
-      console.log("New Concept:", newConcept)
-      setMasteryLevels(newMastery);
-      console.log('Mastery Levels:', newMastery);
-      
       // Format the database result
       const dbResultString = formatDBResult(resultFromDB);
       
@@ -193,14 +316,41 @@ export function MainUI({
         dbResultString 
       }]);
 
-      // Generate the next query
-      const { narrative, randomChoice: newRandomChoice } = await generateQueryForConcept(
-        theme,
-        newConcept,
-        0.5 // Default coefficient
-      );
-      
-      setRandomChoice(newRandomChoice);
+      // Only proceed to next question if answer is correct
+      if (isCorrect) {
+        // Show success feedback
+        setFeedbackMessage('Correct! Loading next question...');
+        setIsLoadingNextQuestion(true);
+        
+        // Get the next concept based on the action
+        const newActionNumber = parseInt(action, 10);
+        const newConcept = concepts[newActionNumber];
+        
+        // Update state with values from response
+        setConcept(newConcept);
+        console.log("New Concept:", newConcept)
+        setMasteryLevels(newMastery);
+        console.log('Mastery Levels:', newMastery);
+        
+        // Generate the next query
+        const { narrative, randomChoice: newRandomChoice } = await generateQueryForConcept(
+          theme,
+          newConcept,
+          0.5 // Default coefficient
+        );
+        
+        setRandomChoice(newRandomChoice);
+        setOutput(narrative);
+        
+        // Clear feedback after loading
+        setFeedbackMessage('');
+        setIsLoadingNextQuestion(false);
+      } else {
+        // Keep the same question and narrative for incorrect answers
+        console.log('Answer incorrect, staying on same question');
+        setFeedbackMessage('Wrong answer, please try again.');
+        setOutput(prev => prev + '<br/><span class="text-red-500">Error: Incorrect answer, please try again.</span>');
+      }
 
       // Show appropriate animation based on correctness
       if (isCorrect) {
@@ -209,6 +359,8 @@ export function MainUI({
         setAttempts(0); // Reset attempts for next question
         setHintsUsed(false); // Reset for next question
         setHintText('');
+        setShowCorrectAnswer(false); // Reset correct answer for next question
+        setCorrectAnswerText('');
       } else {
         setShowErrorAnimation(true);
         setTimeout(() => setShowErrorAnimation(false), 1500);
@@ -222,7 +374,6 @@ export function MainUI({
       handleUpdateProgress(isCorrect, conceptJustMastered ? concept : undefined);
 
       console.log('请求成功，准备重置状态');
-      setOutput(narrative);
       setInput('');
       setIsLoading(false);
       console.log('setIsLoading(false) 调用');
@@ -313,6 +464,32 @@ export function MainUI({
     // eslint-disable-next-line
   }, [hintsUsed, theme, concept, randomChoice]);
 
+  useEffect(() => {
+    const fetchCorrectAnswer = async () => {
+      if (showCorrectAnswer) {
+        // Get the current input and expected for the question
+        const themeQueries = Queries[theme as keyof typeof Queries];
+        const conceptQueries = themeQueries[concept as keyof typeof themeQueries];
+        const expected = conceptQueries?.expected?.[randomChoice];
+        const inputData = conceptQueries?.input?.[randomChoice];
+
+        if (expected && inputData) {
+          setCorrectAnswerText('Loading correct answer...');
+          try {
+            const answer = await getCorrectAnswerFromLLM(theme, concept, inputData, expected);
+            setCorrectAnswerText(answer);
+          } catch (e) {
+            setCorrectAnswerText('Failed to load correct answer.');
+          }
+        }
+      } else {
+        setCorrectAnswerText('');
+      }
+    };
+    fetchCorrectAnswer();
+    // eslint-disable-next-line
+  }, [showCorrectAnswer, theme, concept, randomChoice]);
+
   return (
     <>
       <style>{animations.success + animations.error + animations.tooltip}</style>
@@ -374,10 +551,30 @@ export function MainUI({
                 displayText={displayText}
                 isTyping={isTyping}
               />
+              {feedbackMessage && (
+                <div className={`mt-4 p-3 rounded-lg border ${
+                  isLoadingNextQuestion 
+                    ? 'bg-blue-900/20 border-blue-500/30 text-blue-200' 
+                    : 'bg-red-900/20 border-red-500/30 text-red-200'
+                }`}>
+                  <div className="flex items-center">
+                    {isLoadingNextQuestion && (
+                      <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mr-2"></div>
+                    )}
+                    <span className="text-sm font-medium">{feedbackMessage}</span>
+                  </div>
+                </div>
+              )}
               {hintsUsed && hintText && (
     <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
       <div className="text-sm text-blue-300 font-medium mb-1">💡 Hint:</div>
       <div className="text-sm text-blue-200">{hintText}</div>
+    </div>
+  )}
+              {showCorrectAnswer && correctAnswerText && (
+    <div className="mt-4 p-3 bg-green-900/20 border border-green-500/30 rounded-lg">
+      <div className="text-sm text-green-300 font-medium mb-1">✅ Correct Answer:</div>
+      <div className="text-sm text-green-200 font-mono">{correctAnswerText}</div>
     </div>
   )}
             </div>
@@ -386,16 +583,16 @@ export function MainUI({
             <div className="mt-auto">
               <SQLEditor
                 value={input}
-                onChange={setInput}
+                onChange={handleInputChange}
                 onSubmit={handleSubmit}
                 isLoading={isLoading}
               />
               <UserBehaviour
                 attempts={attempts}
                 hintsUsed={hintsUsed}
-                onHintToggle={() => {
-                  if (!hintsUsed) setHintsUsed(true);
-                }}
+                onHintToggle={handleHintToggle}
+                onCorrectAnswerToggle={handleCorrectAnswerToggle}
+                showCorrectAnswer={showCorrectAnswer}
               />
             </div>
           </div>

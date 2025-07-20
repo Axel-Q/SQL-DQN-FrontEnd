@@ -44,7 +44,7 @@ export function MasteryProgress({ concepts, masteryLevels }: MasteryProgressProp
                   : 'text-blue-400'
               }`}
             >
-              {Math.round(masteryLevels[index] * 100)}%
+              {Number.isFinite(masteryLevels[index]) ? Math.round(masteryLevels[index] * 100) : 0}%
             </span>
           </div>
         ))}
