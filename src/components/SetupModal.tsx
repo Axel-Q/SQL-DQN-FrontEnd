@@ -248,11 +248,7 @@ export function SetupModal({ isOpen, onClose, onComplete }: SetupModalProps) {
             />
             <label
               htmlFor="csv-upload"
-              className={`flex items-center justify-center px-4 py-2 rounded-lg transition-colors ${
-                isLoading 
-                  ? 'bg-gray-700 opacity-50 cursor-not-allowed' 
-                  : 'bg-gray-700 cursor-pointer hover:bg-gray-600'
-              }`}
+              className={`flex items-center justify-center px-4 py-2 rounded-lg transition-colors hidden`}
             >
               <Upload className="w-4 h-4 mr-2" />
               Upload CSV
