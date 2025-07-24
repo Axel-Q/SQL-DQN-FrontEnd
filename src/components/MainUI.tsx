@@ -63,6 +63,7 @@ export function MainUI({
   const [conceptsToShow, setConceptsToShow] = useState<string[]>([]);
   const [isCompletedList, setIsCompletedList] = useState(false);
   const [recentBadge, setRecentBadge] = useState<null | Badge>(null);
+  const prevUnlockedBadgeIds = useRef<string[]>([]);
 
   
 
@@ -495,14 +496,15 @@ export function MainUI({
   // Detect new badge unlocks
   useEffect(() => {
     const unlocked = userProgress.badges.filter(b => b.unlocked);
-    if (unlocked.length > 0) {
-      // Only show popup for the most recently unlocked badge
-      const lastUnlocked = unlocked[unlocked.length - 1];
-      // Only show if this badge wasn't already shown
-      if (!recentBadge || recentBadge.id !== lastUnlocked.id) {
-        setRecentBadge(lastUnlocked);
-      }
+    const unlockedIds = unlocked.map(b => b.id);
+    const prevIds = prevUnlockedBadgeIds.current;
+    // 找到新解锁的 badge（在 unlockedIds 里但不在 prevIds 里）
+    const newlyUnlocked = unlocked.find(b => !prevIds.includes(b.id));
+    if (newlyUnlocked) {
+      setRecentBadge(newlyUnlocked);
     }
+    // 更新 prev ref
+    prevUnlockedBadgeIds.current = unlockedIds;
   }, [userProgress.badges]);
 
   // Handler to close badge popup
